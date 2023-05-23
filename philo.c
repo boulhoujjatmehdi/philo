@@ -6,7 +6,7 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/03 14:00:40 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/23 13:35:36 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/05/23 15:20:23 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,8 +28,6 @@ void take_fork(t_phil *philo)
 	pthread_mutex_unlock(&philo->gen->frk[philo->id - 1]);
 	printf("philo %d is sleeping\n", philo->id);
 	usleep(200);
-	
-	
 	
 }
 
