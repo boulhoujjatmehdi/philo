@@ -6,18 +6,17 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/03 14:23:07 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/22 12:54:01 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/05/25 13:13:02 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-t_phil * new_fill()
+long get_time(t_gen *gen, int bol)
 {
-    t_phil *new = malloc(sizeof(t_phil));
-    if (!new)
-        return NULL;
-    new->id = 0;
-    new->phil_thread = malloc(sizeof(pthread_t));
-    return new;
+	struct timeval timev;
+	gettimeofday(&timev, NULL);
+	if (bol)
+		return (((timev.tv_sec * 1000) + (timev.tv_usec / 1000)) - gen->mill_time);
+	return ((timev.tv_sec * 1000) + (timev.tv_usec / 1000));
 }
