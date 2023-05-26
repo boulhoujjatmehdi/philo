@@ -6,7 +6,7 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/03 14:02:00 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/25 11:44:21 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/05/26 11:39:20 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,7 @@ typedef struct s_phil
 	t_gen *gen;
 	pthread_t phil_thread;
 	long last_eat;
+	int nb_eat;
 }t_phil;
 
 //if bol=1 return the diff
