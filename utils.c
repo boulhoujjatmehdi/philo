@@ -6,19 +6,18 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/03 14:23:07 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/27 20:26:19 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/05/29 20:07:05 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-long get_time(t_gen *gen, int bol)
+long	get_time(long diff)
 {
-	struct timeval timev;
+	struct timeval	timev;
+
 	gettimeofday(&timev, NULL);
-	if (bol)
-		return (((timev.tv_sec * 1000) + (timev.tv_usec / 1000)) - gen->mill_time);
-	return ((timev.tv_sec * 1000) + (timev.tv_usec / 1000));
+	return (((timev.tv_sec * 1000) + (timev.tv_usec / 1000)) - diff);
 }
 
 int	ft_isdigit(int c)
@@ -51,42 +50,43 @@ int	ft_atoi(const char *str)
 			return (-1);
 		i++;
 	}
-	if(str[i])
-		return -1;
+	if (str[i])
+		return (-1);
 	return (ret * neg);
 }
 
-void usleep_inou(int tm, t_gen *gen)
+void	usleep_inou(int tm)
 {
-	long time;
+	long	time;
 
-	time = get_time(gen, 0) + tm;
-	while (time > get_time(gen, 0))
-		usleep(200);
+	time = get_time(0) + tm;
+	while (time > get_time(0))
+		usleep(250);
 }
-int initialize_data(t_gen *gen,int ac, char **av)
+
+int	initialize_data(t_gen *gen, int ac, char **av)
 {
-	if(ac != 5 && ac != 6)
-		return 0;
+	if (ac != 5 && ac != 6)
+		return (0);
 	gen->philo_nb = ft_atoi(av[1]);
-	if(gen->philo_nb <= 0 || gen->philo_nb > 200)
-		return 0;
+	if (gen->philo_nb <= 0 || gen->philo_nb > 200)
+		return (0);
 	gen->time_die = ft_atoi(av[2]);
-	if(gen->time_die < 0)
-		return 0;
+	if (gen->time_die < 0)
+		return (0);
 	gen->time_eat = ft_atoi(av[3]);
-	if(gen->time_eat < 60)
-		return 0;
+	if (gen->time_eat < 60)
+		return (0);
 	gen->time_sleep = ft_atoi(av[4]);
-	if(gen->time_sleep < 60)
-		return 0;
-	if(av[5])
+	if (gen->time_sleep < 60)
+		return (0);
+	if (av[5])
 	{
 		gen->cycle_eat = ft_atoi(av[5]);
-		if(gen->cycle_eat <=0)
-			return 0;
-	}	
+		if (gen->cycle_eat <= 0)
+			return (0);
+	}
 	else
 		gen->cycle_eat = -1;
-	return 1;
+	return (1);
 }
