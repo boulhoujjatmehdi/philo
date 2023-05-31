@@ -6,7 +6,7 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/03 14:00:40 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/29 20:37:44 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/05/31 19:33:47 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,11 +30,11 @@ void	eating(t_phil *philo)
 	philo->last_eat = get_time(gen->mill_time);
 	pthread_mutex_unlock(&gen->_last[philo->id - 1]);
 	usleep_inou(gen->time_eat);
-	pthread_mutex_lock(&gen->count);
+	pthread_mutex_lock(&gen->c);
 	philo->nb_eat++;
 	if (philo->nb_eat == philo->gen->cycle_eat)
 		philo->gen->cycle_count++;
-	pthread_mutex_unlock(&gen->count);
+	pthread_mutex_unlock(&gen->c);
 	pthread_mutex_unlock(&philo->gen->frk[philo_id]);
 	pthread_mutex_unlock(&philo->gen->frk[philo->id - 1]);
 }
@@ -49,6 +49,13 @@ void	*philo_thread(void *arg)
 	pthread_mutex_unlock(&philo->gen->_last[philo->id - 1]);
 	while (1)
 	{
+		pthread_mutex_lock(&philo->gen->s);
+		if (*philo->stop)
+		{
+			pthread_mutex_unlock(&philo->gen->s);
+			break ;
+		}
+		pthread_mutex_unlock(&philo->gen->s);
 		lock_print(4, philo);
 		eating(philo);
 		lock_print(3, philo);
@@ -57,82 +64,70 @@ void	*philo_thread(void *arg)
 	return (NULL);
 }
 
-t_phil	*create_philos(t_gen *gen)
+t_phil	*create_philos(t_gen *gen, int *stop)
 {
 	int		i;
 	t_phil	*philo;
 
+	i = 0;
 	philo = ft_calloc(sizeof(t_phil), gen->philo_nb + 1);
 	gen->frk = ft_calloc(sizeof(pthread_mutex_t), gen->philo_nb);
 	gen->_last = ft_calloc(sizeof(pthread_mutex_t), gen->philo_nb);
-	pthread_mutex_init(&gen->last, NULL);
-	pthread_mutex_init(&gen->count, NULL);
-	pthread_mutex_init(&gen->print, NULL);
+	i = pthread_mutex_init(&gen->s, NULL) + pthread_mutex_init(&gen->c, NULL)
+		+ pthread_mutex_init(&gen->print, NULL);
+	if (i || !gen->frk || !philo || !gen->_last)
+		return (NULL);
 	i = 0;
 	while (i < gen->philo_nb)
 	{
 		philo[i].id = i + 1;
 		philo[i].gen = gen;
+		philo[i].stop = stop;
 		pthread_mutex_init(&philo[i].gen->frk[i], NULL);
 		pthread_mutex_init(&philo[i].gen->_last[i], NULL);
 		i++;
 	}
+	gen->mill_time = get_time(0);
 	return (philo);
 }
 
-void	monitoring(t_gen *gen, t_phil *philo)
+int	start_philoes(t_gen *gen, t_phil *philo)
 {
 	int	i;
 
 	i = 0;
-	pthread_mutex_lock(&gen->_last[i]);
-	gen->t_tmp = philo[i].last_eat;
-	pthread_mutex_unlock(&gen->_last[i]);
-	pthread_mutex_lock(&gen->count);
-	gen->t_count = gen->cycle_count;
-	pthread_mutex_unlock(&gen->count);
-	while (gen->t_count < gen->philo_nb && i < gen->philo_nb
-		&& get_time(gen->mill_time) - gen->t_tmp < gen->time_die)
-	{
-		i++;
-		if (i == gen->philo_nb)
-			i = 0;
-		pthread_mutex_lock(&gen->_last[i]);
-		gen->t_tmp = philo[i].last_eat;
-		pthread_mutex_unlock(&gen->_last[i]);
-		pthread_mutex_lock(&gen->count);
-		gen->t_count = gen->cycle_count;
-		pthread_mutex_unlock(&gen->count);
-	}
-	pthread_mutex_lock(&gen->print);
-	if (gen->t_count != gen->philo_nb)
-		printf("%ld %d died\n", get_time(gen->mill_time), philo[i].id);
-}
-
-int	main(int ac, char **av)
-{
-	int		i;
-	t_gen	*gen;
-	t_phil	*philo;
-
-	gen = ft_calloc(sizeof(t_gen), 1);
-	if (!initialize_data(gen, ac, av))
-		return (1);
-	philo = create_philos(gen);
-	gen->mill_time = get_time(0);
-	i = 0;
 	while (i < gen->philo_nb)
 	{
-		pthread_create(&philo[i].phil_thread, NULL, philo_thread, &philo[i]);
+		if (pthread_create(&philo[i].thread, NULL, philo_thread, &philo[i]))
+			return (1);
 		i += 2;
-		usleep(10);
+		usleep(2);
 	}
 	i = 1;
 	while (i < gen->philo_nb)
 	{
-		pthread_create(&philo[i].phil_thread, NULL, philo_thread, &philo[i]);
+		if (pthread_create(&philo[i].thread, NULL, philo_thread, &philo[i]))
+			return (1);
 		i += 2;
-		usleep(10);
+		usleep(2);
 	}
-	monitoring(gen, philo);
+	return (0);
+}
+
+int	main(int ac, char **av)
+{
+	t_gen	gen;
+	t_phil	*philo;
+	int		stop;
+
+	stop = 0;
+	if (!initialize_data(&gen, ac, av))
+		return (1);
+	philo = create_philos(&gen, &stop);
+	if (!philo)
+		return (1);
+	if (start_philoes(&gen, philo))
+		return (1);
+	monitoring(&gen, philo);
+	destroy_all(&gen, philo);
 }

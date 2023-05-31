@@ -6,7 +6,7 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/03 14:02:00 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/29 20:38:53 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/05/31 19:28:22 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,6 @@
 typedef struct s_gen
 {
 	int				philo_nb;
-	int				forks_nb;
 	int				time_die;
 	int				time_eat;
 	int				time_sleep;
@@ -33,8 +32,8 @@ typedef struct s_gen
 	long			mill_time;
 	struct timeval	time;
 	pthread_mutex_t	*frk;
-	pthread_mutex_t	last;
-	pthread_mutex_t	count;
+	pthread_mutex_t	s;
+	pthread_mutex_t	c;
 	pthread_mutex_t	*_last;
 	pthread_mutex_t	print;
 	long			t_tmp;
@@ -46,7 +45,8 @@ typedef struct s_phil
 {
 	int			id;
 	t_gen		*gen;
-	pthread_t	phil_thread;
+	int			*stop;
+	pthread_t	thread;
 	long		last_eat;
 	int			nb_eat;
 }t_phil;
@@ -62,5 +62,10 @@ int		initialize_data(t_gen *gen, int ac, char **av);
 //utils 1 
 void	lock_print(int idx, t_phil *philo);
 void	*ft_calloc(size_t count, size_t size);
+
+//utils 2
+long	get_val(void *val, pthread_mutex_t *mtx);
+void	monitoring(t_gen *gen, t_phil *philo);
+int		destroy_all(t_gen *gen, t_phil *philo);
 
 #endif

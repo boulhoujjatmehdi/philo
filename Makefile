@@ -4,7 +4,7 @@ CC= cc -Wall -Wextra -Werror \
 	# -g -fsanitize=thread
 
 
-SRC= philo.c utils.c utils1.c
+SRC= philo.c utils.c utils1.c utils2.c
 
 all:$(NAME)
 

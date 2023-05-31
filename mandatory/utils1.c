@@ -6,7 +6,7 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/29 19:54:01 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/29 20:38:10 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/05/31 19:25:06 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,14 @@ void	lock_print(int idx, t_phil *philo)
 	long	time;
 
 	pthread_mutex_lock(&philo->gen->print);
+	pthread_mutex_lock(&philo->gen->s);
+	if (*philo->stop)
+	{	
+		pthread_mutex_unlock(&philo->gen->s);
+		pthread_mutex_unlock(&philo->gen->print);
+		return ;
+	}
+	pthread_mutex_unlock(&philo->gen->s);
 	time = get_time(philo->gen->mill_time);
 	if (idx == 1)
 		printf("%ld %d has taken a fork\n", time, philo->id);
