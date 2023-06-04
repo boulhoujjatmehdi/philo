@@ -6,7 +6,7 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/03 14:00:40 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/31 19:33:47 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/06/03 20:03:20 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,47 +21,58 @@ void	eating(t_phil *philo)
 	gen = philo->gen;
 	if (philo_id == philo->gen->philo_nb)
 		philo_id = 0;
-	pthread_mutex_lock(&philo->gen->frk[philo->id - 1]);
+	sem_wait(gen->frk);
+	// sem_wait(gen->frk);
+	
 	lock_print(1, philo);
-	pthread_mutex_lock(&philo->gen->frk[philo_id]);
 	lock_print(1, philo);
 	lock_print(2, philo);
-	pthread_mutex_lock(&gen->_last[philo->id - 1]);
 	philo->last_eat = get_time(gen->mill_time);
-	pthread_mutex_unlock(&gen->_last[philo->id - 1]);
 	usleep_inou(gen->time_eat);
-	pthread_mutex_lock(&gen->c);
+
 	philo->nb_eat++;
 	if (philo->nb_eat == philo->gen->cycle_eat)
 		philo->gen->cycle_count++;
-	pthread_mutex_unlock(&gen->c);
-	pthread_mutex_unlock(&philo->gen->frk[philo_id]);
-	pthread_mutex_unlock(&philo->gen->frk[philo->id - 1]);
+
+	sem_post(gen->frk);
+	// sem_post(gen->frk);
 }
+
 
 void	*philo_thread(void *arg)
 {
 	t_phil	*philo;
 
 	philo = (t_phil *)arg;
-	pthread_mutex_lock(&philo->gen->_last[philo->id - 1]);
 	philo->last_eat = get_time(philo->gen->mill_time);
-	pthread_mutex_unlock(&philo->gen->_last[philo->id - 1]);
-	while (1)
+	while (philo->last_eat + philo->gen->time_die > get_time(philo->gen->mill_time))
 	{
-		pthread_mutex_lock(&philo->gen->s);
 		if (*philo->stop)
 		{
-			pthread_mutex_unlock(&philo->gen->s);
 			break ;
 		}
-		pthread_mutex_unlock(&philo->gen->s);
 		lock_print(4, philo);
 		eating(philo);
 		lock_print(3, philo);
 		usleep_inou(philo->gen->time_sleep);
 	}
+	// printf("%ld %d died\n(%ld) (%ld)\n", get_time(philo->gen->mill_time), philo->id, philo->last_eat + philo->gen->time_die ,  get_time(philo->gen->mill_time)+100);
 	return (NULL);
+}
+
+// int child_monitor(t_phil *philo)
+// {
+
+// }
+
+void philo_child(t_phil *philo)
+{
+	pthread_create(&philo->thread, NULL, philo_thread, philo);
+	// child_monitor(philo);
+	pthread_join(philo->thread, NULL);
+	// printf("hello from child nb = %d\n", philo->id);
+	exit(44);
+	
 }
 
 t_phil	*create_philos(t_gen *gen, int *stop)
@@ -71,20 +82,21 @@ t_phil	*create_philos(t_gen *gen, int *stop)
 
 	i = 0;
 	philo = ft_calloc(sizeof(t_phil), gen->philo_nb + 1);
-	gen->frk = ft_calloc(sizeof(pthread_mutex_t), gen->philo_nb);
-	gen->_last = ft_calloc(sizeof(pthread_mutex_t), gen->philo_nb);
-	i = pthread_mutex_init(&gen->s, NULL) + pthread_mutex_init(&gen->c, NULL)
-		+ pthread_mutex_init(&gen->print, NULL);
-	if (i || !gen->frk || !philo || !gen->_last)
-		return (NULL);
+	gen->pid = ft_calloc(sizeof(int), gen->philo_nb);
+	gen->_last = ft_calloc(sizeof(sem_t), gen->philo_nb);
 	i = 0;
+	char str[] = "mehdi1";
+	sem_unlink(str);
+	gen->frk = sem_open(str, O_CREAT | O_EXCL, 0666, gen->philo_nb / 2);
+	str[0] = '0';
+	gen->print = sem_open(str, O_CREAT | O_EXCL, 0666, 1);
+	if(gen->frk == SEM_FAILED)
+		exit(10);
 	while (i < gen->philo_nb)
 	{
 		philo[i].id = i + 1;
 		philo[i].gen = gen;
 		philo[i].stop = stop;
-		pthread_mutex_init(&philo[i].gen->frk[i], NULL);
-		pthread_mutex_init(&philo[i].gen->_last[i], NULL);
 		i++;
 	}
 	gen->mill_time = get_time(0);
@@ -96,30 +108,27 @@ int	start_philoes(t_gen *gen, t_phil *philo)
 	int	i;
 
 	i = 0;
-	while (i < gen->philo_nb)
+
+	while(i < gen->philo_nb)
 	{
-		if (pthread_create(&philo[i].thread, NULL, philo_thread, &philo[i]))
-			return (1);
-		i += 2;
-		usleep(2);
-	}
-	i = 1;
-	while (i < gen->philo_nb)
-	{
-		if (pthread_create(&philo[i].thread, NULL, philo_thread, &philo[i]))
-			return (1);
-		i += 2;
-		usleep(2);
+		gen->pid[i] = fork();
+		if(gen->pid[i] == 0)
+		{
+			philo_child(&philo[i]);
+		}
+		i++;
 	}
 	return (0);
 }
+
+#include <signal.h>
 
 int	main(int ac, char **av)
 {
 	t_gen	gen;
 	t_phil	*philo;
 	int		stop;
-
+	int		i;
 	stop = 0;
 	if (!initialize_data(&gen, ac, av))
 		return (1);
@@ -128,6 +137,15 @@ int	main(int ac, char **av)
 		return (1);
 	if (start_philoes(&gen, philo))
 		return (1);
-	monitoring(&gen, philo);
-	destroy_all(&gen, philo);
+	wait(NULL);
+	sem_wait(gen.print);
+	i = 0;
+	printf("died\n");
+	while(i < gen.philo_nb)
+	{
+		kill(gen.pid[i], SIGINT);
+		i++;
+	}
+	// pause();
+	sem_post(gen.print);
 }

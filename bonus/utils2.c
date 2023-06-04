@@ -6,7 +6,7 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/31 19:14:27 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/31 19:26:48 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/06/03 19:29:35 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ void	monitoring(t_gen *gen, t_phil *philo)
 	int	i;
 
 	i = 0;
-	gen->t_tmp = get_val(&philo[i].last_eat, &gen->_last[i]);
+	// gen->t_tmp = get_val(&philo[i].last_eat, &gen->_last[i]);
 	gen->t_count = get_val(&gen->cycle_count, &gen->c);
 	while (gen->t_count < gen->philo_nb && i < gen->philo_nb
 		&& get_time(gen->mill_time) - gen->t_tmp < gen->time_die)
@@ -35,16 +35,16 @@ void	monitoring(t_gen *gen, t_phil *philo)
 		i++;
 		if (i == gen->philo_nb)
 			i = 0;
-		gen->t_tmp = get_val(&philo[i].last_eat, &gen->_last[i]);
-		gen->t_count = get_val(&gen->cycle_count, &gen->c);
+		// gen->t_tmp = get_val(&philo[i].last_eat, &gen->_last[i]);
+		// gen->t_count = get_val(&gen->cycle_count, &gen->c);
 	}
 	pthread_mutex_lock(&gen->s);
 	*philo->stop = 1;
 	pthread_mutex_unlock(&gen->s);
-	pthread_mutex_lock(&gen->print);
+	sem_wait(gen->print);
 	if (gen->t_count != gen->philo_nb)
 		printf("%ld %d died\n", get_time(gen->mill_time), philo[i].id);
-	pthread_mutex_unlock(&gen->print);
+	sem_post(gen->print);
 }
 
 int	destroy_all(t_gen *gen, t_phil *philo)
@@ -56,12 +56,12 @@ int	destroy_all(t_gen *gen, t_phil *philo)
 		pthread_join(philo[i].thread, NULL);
 	pthread_mutex_destroy(&gen->s);
 	pthread_mutex_destroy(&gen->c);
-	pthread_mutex_destroy(&gen->print);
+	// pthread_mutex_destroy(&gen->print);
 	i = 0;
 	while (i < gen->philo_nb)
 	{
-		pthread_mutex_destroy(&gen->_last[i]);
-		pthread_mutex_destroy(&gen->frk[i]);
+		// pthread_mutex_destroy(&gen->_last[i]);
+		// pthread_mutex_destroy(&gen->frk[i]);
 		i++;
 	}
 	free(philo);

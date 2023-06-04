@@ -6,7 +6,7 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/03 14:02:00 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/31 19:28:22 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/06/03 19:27:24 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 # include <pthread.h>
 # include <sys/time.h>
 # include <stdlib.h>
+// #include <dispatch/dispatch.h>
+# include <semaphore.h>
 //--- TO DELETE ----
 //--- TO DELETE ----
 
@@ -31,14 +33,16 @@ typedef struct s_gen
 	int				cycle_count;
 	long			mill_time;
 	struct timeval	time;
-	pthread_mutex_t	*frk;
+	sem_t			*frk;
 	pthread_mutex_t	s;
 	pthread_mutex_t	c;
-	pthread_mutex_t	*_last;
-	pthread_mutex_t	print;
+	sem_t			*_last;
+	sem_t			*print;
 	long			t_tmp;
 	long			t_time;
 	int				t_count;
+	// bonus
+	int				*pid;
 }t_gen;
 
 typedef struct s_phil

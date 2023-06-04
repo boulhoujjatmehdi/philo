@@ -6,7 +6,7 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/29 19:54:01 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/05/31 19:25:06 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/06/03 19:29:00 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,12 +16,12 @@ void	lock_print(int idx, t_phil *philo)
 {
 	long	time;
 
-	pthread_mutex_lock(&philo->gen->print);
+	sem_wait(philo->gen->print);
 	pthread_mutex_lock(&philo->gen->s);
 	if (*philo->stop)
 	{	
 		pthread_mutex_unlock(&philo->gen->s);
-		pthread_mutex_unlock(&philo->gen->print);
+		// pthread_mutex_unlock(&philo->gen->print);
 		return ;
 	}
 	pthread_mutex_unlock(&philo->gen->s);
@@ -34,7 +34,7 @@ void	lock_print(int idx, t_phil *philo)
 		printf("%ld %d is sleeping\n", time, philo->id);
 	if (idx == 4)
 		printf("%ld %d is thinking\n", time, philo->id);
-	pthread_mutex_unlock(&philo->gen->print);
+	sem_post(philo->gen->print);
 }
 
 void	ft_bzero(void *s, size_t n)
