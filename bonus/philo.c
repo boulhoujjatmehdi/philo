@@ -6,7 +6,7 @@
 /*   By: eboulhou <eboulhou@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/03 14:00:40 by eboulhou          #+#    #+#             */
-/*   Updated: 2023/06/03 20:03:20 by eboulhou         ###   ########.fr       */
+/*   Updated: 2023/06/05 18:19:25 by eboulhou         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,6 @@ void	eating(t_phil *philo)
 	if (philo_id == philo->gen->philo_nb)
 		philo_id = 0;
 	sem_wait(gen->frk);
-	// sem_wait(gen->frk);
 	
 	lock_print(1, philo);
 	lock_print(1, philo);
@@ -35,7 +34,6 @@ void	eating(t_phil *philo)
 		philo->gen->cycle_count++;
 
 	sem_post(gen->frk);
-	// sem_post(gen->frk);
 }
 
 
@@ -45,7 +43,7 @@ void	*philo_thread(void *arg)
 
 	philo = (t_phil *)arg;
 	philo->last_eat = get_time(philo->gen->mill_time);
-	while (philo->last_eat + philo->gen->time_die > get_time(philo->gen->mill_time))
+	while (1)
 	{
 		if (*philo->stop)
 		{
@@ -56,22 +54,29 @@ void	*philo_thread(void *arg)
 		lock_print(3, philo);
 		usleep_inou(philo->gen->time_sleep);
 	}
-	// printf("%ld %d died\n(%ld) (%ld)\n", get_time(philo->gen->mill_time), philo->id, philo->last_eat + philo->gen->time_die ,  get_time(philo->gen->mill_time)+100);
 	return (NULL);
 }
 
-// int child_monitor(t_phil *philo)
-// {
-
-// }
+int child_monitor(t_phil *philo)
+{
+	while(1)
+	{
+		usleep_inou(1);
+		sem_wait(philo->gen->print);
+		if(philo->last_eat + philo->gen->time_die <= get_time(philo->gen->mill_time))
+		{
+			sem_post(philo->gen->print);
+			return 1;
+		}
+		sem_post(philo->gen->print);
+	}
+}
 
 void philo_child(t_phil *philo)
 {
 	pthread_create(&philo->thread, NULL, philo_thread, philo);
-	// child_monitor(philo);
-	pthread_join(philo->thread, NULL);
-	// printf("hello from child nb = %d\n", philo->id);
-	exit(44);
+	child_monitor(philo);
+	exit(philo->id);
 	
 }
 
@@ -88,7 +93,8 @@ t_phil	*create_philos(t_gen *gen, int *stop)
 	char str[] = "mehdi1";
 	sem_unlink(str);
 	gen->frk = sem_open(str, O_CREAT | O_EXCL, 0666, gen->philo_nb / 2);
-	str[0] = '0';
+	str[1] = '1';
+	sem_unlink(str);
 	gen->print = sem_open(str, O_CREAT | O_EXCL, 0666, 1);
 	if(gen->frk == SEM_FAILED)
 		exit(10);
@@ -137,15 +143,17 @@ int	main(int ac, char **av)
 		return (1);
 	if (start_philoes(&gen, philo))
 		return (1);
-	wait(NULL);
-	sem_wait(gen.print);
+	int stt;
+	wait(&stt);
+	
+	// sem_wait(gen.print);
 	i = 0;
-	printf("died\n");
 	while(i < gen.philo_nb)
 	{
 		kill(gen.pid[i], SIGINT);
 		i++;
 	}
+	printf("%ld %d died\n",get_time(gen.mill_time),  stt >> 8);
 	// pause();
-	sem_post(gen.print);
+	// sem_post(gen.print);
 }
